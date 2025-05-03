@@ -1,12 +1,12 @@
 import './App.css'
-import CodeDetector from '../components/CodeDetector'
+import Layout from '../components/Layout.tsx'
+import CodeDetectionPage from '../components/CodeDetectionPage'
 
 function App() {
-
   return (
-    <>
-      <CodeDetector></CodeDetector>
-    </>
+    <Layout>
+      <CodeDetectionPage />
+    </Layout>
   )
 }
 
