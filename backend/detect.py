@@ -325,7 +325,7 @@ async def detect_ai_generated_enhanced_async(code, num_rewrites=3, min_rewrites=
         result = "VERY LIKELY AI-GENERATED (similarity patterns almost identical)"
     elif similarity_diff <= 0.06:
         result = "LIKELY AI-GENERATED (similarity patterns very close)"
-    elif similarity_diff <= 0.1:
+    elif similarity_diff <= 0.15:
         result = "POSSIBLY AI-GENERATED (similarity patterns somewhat close)"
     else:
         result = "LIKELY HUMAN-WRITTEN (similarity patterns differ significantly)"
