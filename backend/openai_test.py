@@ -25,7 +25,7 @@ def get_code_embedding(code):
     """Get code embeddings using CodeT5+."""
     try:
         inputs = tokenizer.encode(code, return_tensors="pt").to(device)
-        # Handle potential input length issues
+        # input length issues
         if inputs.shape[1] > 512:
             inputs = inputs[:, :512]
         with torch.no_grad():
@@ -37,22 +37,30 @@ def get_code_embedding(code):
 
 
 def rewrite_code(code, retry_attempts=3, retry_delay=60):
-    """Have GPT-3.5 Turbo rewrite the given code snippet with retry logic."""
+    """Have GPT rewrite the given code snippet with retry logic."""
     prompt = f"""
     ### Code:
     {code}
     ### Instruction:
     Please explain the functionality of the given code, then rewrite it in a single markdown code block. First find out what the code is doing and what is for, and then rewrite it from scratch. No additional clarifications.
+    
+    Format your response following this structure exactly:
+    
+    1. Brief explanation of what the code does
+    2. A code block with your rewrite, using the ``` and ``` format
+    3. Any other important part of the code like test cases etc
+    
+    Important: Provide ONLY the explanation and code block. Do not add ANY other text.
     """
 
     for attempt in range(retry_attempts):
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that rewrites code.",
+                        "content": "You are a helpful assistant that rewrites code in the way you would do it. Return only the explanation and code block with no additional text.",
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -65,10 +73,21 @@ def rewrite_code(code, retry_attempts=3, retry_delay=60):
                 parts = content.split("```")
                 if len(parts) >= 3:
                     rewritten_code = parts[1]
-                    if rewritten_code.startswith("python") or rewritten_code.startswith(
-                        "java"
+                    # Remove language identifier if present
+                    if (
+                        rewritten_code.split("\n", 1)[0].strip()
+                        and not rewritten_code.split("\n", 1)[0]
+                        .strip()
+                        .startswith("import")
+                        and not rewritten_code.split("\n", 1)[0]
+                        .strip()
+                        .startswith("def")
                     ):
-                        rewritten_code = rewritten_code.split("\n", 1)[1]
+                        rewritten_code = (
+                            rewritten_code.split("\n", 1)[1]
+                            if len(rewritten_code.split("\n", 1)) > 1
+                            else rewritten_code
+                        )
                     return rewritten_code.strip()
             return content
 
@@ -84,8 +103,126 @@ def rewrite_code(code, retry_attempts=3, retry_delay=60):
             return code  # Return original code as fallback
 
 
-def detect_ai_generated(code, num_rewrites=4, min_rewrites=1):
-    """Detect if code is AI-generated, with tolerance for partial results."""
+def extract_problem_statement(code, retry_attempts=3, retry_delay=60):
+    """Extract the problem statement/task that the code is solving using GPT"""
+    prompt = f"""
+    ### Code:
+    {code}
+    
+    ### Instruction:
+    Analyze the given code and extract the exact programming problem or task it's solving.
+    
+    Format your response as a clear, detailed programming challenge that precisely describes what the code accomplishes.
+    Your description should include:
+    - Input format and requirements
+    - Expected output and requirements
+    - Any constraints or edge cases
+    - Any other important part of the code like test cases etc
+    
+    Important: 
+    1. Be specific about what problem the code solves, not how it solves it
+    2. Provide enough detail that someone could implement the solution without seeing the original code
+    3. Return ONLY the problem statement with no additional text
+    4. Remember your explanation is a prompt to try to REPLICATE this code by giving your output as a prompt to AI
+    """
+
+    for attempt in range(retry_attempts):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a skilled programming instructor who creates precise problem statements from code samples. Return only the problem statement with no additional text.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+            )
+
+            problem_statement = response.choices[0].message.content
+            print(f"Extracted problem statement: {problem_statement}\n")
+            return problem_statement
+
+        except openai.RateLimitError as e:
+            if attempt < retry_attempts - 1:
+                print(f"Rate limit hit, waiting {retry_delay} seconds before retry...")
+                time.sleep(retry_delay)
+            else:
+                print(f"All retry attempts failed: {e}")
+                return "Could not extract problem statement"
+        except Exception as e:
+            print(f"Error extracting problem statement: {e}")
+            return "Could not extract problem statement"
+
+
+def generate_code_from_problem(problem_statement, retry_attempts=3, retry_delay=60):
+    """Generate code from the extracted problem statement using GPT"""
+    prompt = f"""
+    ### Programming Problem:
+    {problem_statement}
+    
+    ### Instruction:
+    Write code to solve this problem. Your solution should be:
+    - Efficient
+    - Well-structured
+    - Correctly handling all requirements and edge cases
+    
+    Return ONLY the code solution in a single markdown code block using ``` and ``` format.
+    Do not include any explanations, comments, or additional text outside the code block.
+    """
+
+    for attempt in range(retry_attempts):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an coding assistant write the best possible code",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+            )
+
+            content = response.choices[0].message.content
+
+            # Extract code block from response
+            if "```" in content:
+                parts = content.split("```")
+                if len(parts) >= 3:
+                    generated_code = parts[1]
+                    # Remove language identifier if present
+                    if (
+                        generated_code.split("\n", 1)[0].strip()
+                        and not generated_code.split("\n", 1)[0]
+                        .strip()
+                        .startswith("import")
+                        and not generated_code.split("\n", 1)[0]
+                        .strip()
+                        .startswith("def")
+                    ):
+                        generated_code = (
+                            generated_code.split("\n", 1)[1]
+                            if len(generated_code.split("\n", 1)) > 1
+                            else generated_code
+                        )
+                    return generated_code.strip()
+            return content
+
+        except openai.RateLimitError as e:
+            if attempt < retry_attempts - 1:
+                print(f"Rate limit hit, waiting {retry_delay} seconds before retry...")
+                time.sleep(retry_delay)
+            else:
+                print(f"All retry attempts failed: {e}")
+                return "Could not generate code"
+        except Exception as e:
+            print(f"Error generating code: {e}")
+            return "Could not generate code"
+
+
+def detect_ai_generated(code, num_rewrites=3, min_rewrites=1):
+    """Detect if code is AI-generated based on rewrite similarity."""
     print("Generating rewrites...")
     rewrites = []
 
@@ -140,61 +277,113 @@ def detect_ai_generated(code, num_rewrites=4, min_rewrites=1):
     return avg_similarity
 
 
-def compare_code_pair(code1, code2):
-    """Compare similarity between two code snippets using CodeT5+."""
-    print("Getting embeddings...")
-    embedding1 = get_code_embedding(code1)
-    embedding2 = get_code_embedding(code2)
+def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
+    """Enhanced detection comparing similarities between original code and AI-generated code."""
+    print("====== STEP 1: Extracting Problem Statement ======")
+    problem_statement = extract_problem_statement(code)
 
-    if embedding1 is None or embedding2 is None:
-        print("Failed to get embeddings for one or both code snippets.")
-        return None
+    print("\n====== STEP 2: Generating New Code from Problem Statement ======")
+    ai_generated_code = generate_code_from_problem(problem_statement)
+    print("\nAI-generated code from problem statement:")
+    print("```")
+    print(ai_generated_code)
+    print("```")
 
-    similarity = cosine_similarity([embedding1], [embedding2])[0][0]
-    print(f"Similarity score: {similarity:.4f}")
+    print("\n====== STEP 3: Testing Original Code ======")
+    original_similarity = detect_ai_generated(code, num_rewrites, min_rewrites)
 
-    return similarity
+    print("\n====== STEP 4: Testing AI-Generated Code ======")
+    ai_similarity = detect_ai_generated(ai_generated_code, num_rewrites, min_rewrites)
+
+    # Compare the similarities
+    if original_similarity is None or ai_similarity is None:
+        return "Could not determine if code is AI-generated due to calculation errors."
+
+    similarity_diff = abs(original_similarity - ai_similarity)
+
+    print("\n====== COMPARISON RESULTS ======")
+    print(f"Original code similarity: {original_similarity:.4f}")
+    print(f"AI-generated code similarity: {ai_similarity:.4f}")
+    print(f"Difference: {similarity_diff:.4f}")
+
+    # Interpret results
+    if similarity_diff <= 0.04:
+        result = "VERY LIKELY AI-GENERATED (similarity patterns almost identical)"
+    elif similarity_diff <= 0.06:
+        result = "LIKELY AI-GENERATED (similarity patterns very close)"
+    elif similarity_diff <= 0.1:
+        result = "POSSIBLY AI-GENERATED (similarity patterns somewhat close)"
+    else:
+        result = "LIKELY HUMAN-WRITTEN (similarity patterns differ significantly)"
+
+    print(f"\nVERDICT: {result}")
+
+    return {
+        "original_similarity": original_similarity,
+        "ai_similarity": ai_similarity,
+        "difference": similarity_diff,
+        "result": result,
+    }
 
 
 # Example usage
 if __name__ == "__main__":
-    # For simple comparison between two code snippets
-    code_1 = """
-  def covered(room):
-    grid = []
-    for row in room:
-        grid.append(list(row))
-    rows = len(grid)
-    cols = len(grid[0])
+    # Test code
+    code_to_test = """
+private static int disappear(int[][] grid, int startingX, int startingY) {
+    if (grid == null | grid.length == 0) return -1;
+    int count = 1;
+    int m = grid.length; int n=grid[0].length;
+    boolean[][] visited = new boolean[m][n];
+    Queue<Pair> queue = new LinkedList<>();
+    queue.offer(new Pair(startingX, startingY));
+    int startingNum = grid[startingX][startingY];
+    visited[startingX][startingY] = true;
+    
+    // bfs
+    while (!queue.isEmpty()) { // TIme: O (N*M)
+      Pair curr = queue.poll();
+      
+      for (Pair neighbor : generateNeighborNodes(grid, visited, curr, startingNum)) {
+        if (visited[neighbor.x][neighbor.y]) continue;
+        queue.offer(neighbor);
+        visited[neighbor.x][neighbor.y] = true;
+        ++count;
+      }
+    }
+    
+    return count;
+  }
+  
+  
+  private static List<Pair> generateNeighborNodes(int[][] grid, boolean[][] visited, Pair curr, int comparisonNum) {
+    List<Pair> list = new ArrayList<>();
+    int x = curr.x; int y = curr.y;
+    // up
+    if (x - 1 >= 0 && grid[x-1][y] == comparisonNum)
+      list.add(new Pair(x-1, y));
+      
+    // down
+    if (x + 1 < grid.length && grid[x+1][y] == comparisonNum)
+      list.add(new Pair(x+1, y));
+      
+    // left
+    if (y - 1 >= 0 && grid[x][y-1] == comparisonNum)
+      list.add(new Pair(x, y-1));
+    
+    // right
+    if (y + 1 < grid[x].length && grid[x][y+1] == comparisonNum)
+      list.add(new Pair(x, y+1));
+    
+    return list;
+  }
+  
+  static class Pair {
+    int x; int y;
+    public Pair(int x, int y) {this.x=x; this.y=y;}
+  }
 
-    for i in range(rows):
-        for j in range(cols):
-            if grid[i][j].isdigit():
-                number = int(grid[i][j])
-                for x in range(i-number, number + i+ 1):
-                    for y in range(j-number, number + j +1 ):
-                        if 0 <= x < rows and 0 <= y < cols:
-                            if grid[x][y] == "#":
-                                grid[x][y] = "C"
-
-    for i in range(rows):
-        for j in range(cols):
-            if grid[i][j] == "#":
-                return False
-
-    return True
     """
 
-    code_2 = """
-    # Enter code 2 here
-    """
-
-    # Uncomment one of these:
-    # similarity = compare_code_pair(code_1, code_2)
-    similarity_score = detect_ai_generated(
-        code_1, min_rewrites=1
-    )  # Only need 1 rewrite minimum
-
-    print("\nInterpretation based on the paper:")
-    print("Higher similarity suggests AI-generated code")
-    print("Lower similarity suggests human-written code")
+    # Run enhanced detection
+    detect_ai_generated_enhanced(code_to_test)
