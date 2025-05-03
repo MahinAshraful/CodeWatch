@@ -7,14 +7,13 @@ import torch
 import openai
 import time
 
-# Load environment variables
 load_dotenv()
 
-# Set up OpenAI API for rewriting code
+# setting up openai
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Set up CodeT5+ for code embeddings
+# setting up CodeT5+ for code embeddings
 device = "cuda" if torch.cuda.is_available() else "cpu"
 checkpoint = "Salesforce/codet5p-110m-embedding"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
@@ -330,58 +329,209 @@ def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
 if __name__ == "__main__":
     # Test code
     code_to_test = """
-private static int disappear(int[][] grid, int startingX, int startingY) {
-    if (grid == null | grid.length == 0) return -1;
-    int count = 1;
-    int m = grid.length; int n=grid[0].length;
-    boolean[][] visited = new boolean[m][n];
-    Queue<Pair> queue = new LinkedList<>();
-    queue.offer(new Pair(startingX, startingY));
-    int startingNum = grid[startingX][startingY];
-    visited[startingX][startingY] = true;
-    
-    // bfs
-    while (!queue.isEmpty()) { // TIme: O (N*M)
-      Pair curr = queue.poll();
-      
-      for (Pair neighbor : generateNeighborNodes(grid, visited, curr, startingNum)) {
-        if (visited[neighbor.x][neighbor.y]) continue;
-        queue.offer(neighbor);
-        visited[neighbor.x][neighbor.y] = true;
-        ++count;
-      }
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+#include <string>
+#include <algorithm>
+
+class File {
+public:
+    std::string name;
+    size_t size;
+
+    File(const std::string& name, size_t size) : name(name), size(size) {}
+
+    std::string getName() const {
+        return name;
     }
-    
-    return count;
-  }
-  
-  
-  private static List<Pair> generateNeighborNodes(int[][] grid, boolean[][] visited, Pair curr, int comparisonNum) {
-    List<Pair> list = new ArrayList<>();
-    int x = curr.x; int y = curr.y;
-    // up
-    if (x - 1 >= 0 && grid[x-1][y] == comparisonNum)
-      list.add(new Pair(x-1, y));
-      
-    // down
-    if (x + 1 < grid.length && grid[x+1][y] == comparisonNum)
-      list.add(new Pair(x+1, y));
-      
-    // left
-    if (y - 1 >= 0 && grid[x][y-1] == comparisonNum)
-      list.add(new Pair(x, y-1));
-    
-    // right
-    if (y + 1 < grid[x].length && grid[x][y+1] == comparisonNum)
-      list.add(new Pair(x, y+1));
-    
-    return list;
-  }
-  
-  static class Pair {
-    int x; int y;
-    public Pair(int x, int y) {this.x=x; this.y=y;}
-  }
+
+    size_t getSize() const {
+        return size;
+    }
+};
+
+class FileAVL {
+private:
+    struct Node {
+        File* file;
+        Node* left;
+        Node* right;
+        int height;
+
+        Node(File* file) : file(file), left(nullptr), right(nullptr), height(1) {}
+    };
+
+    Node* root;
+
+    int height(Node* node) {
+        return node ? node->height : 0;
+    }
+
+    int balanceFactor(Node* node) {
+        return height(node->left) - height(node->right);
+    }
+
+    void updateHeight(Node* node) {
+        node->height = std::max(height(node->left), height(node->right)) + 1;
+    }
+
+    Node* rotateRight(Node* y) {
+        Node* x = y->left;
+        Node* T2 = x->right;
+        x->right = y;
+        y->left = T2;
+        updateHeight(y);
+        updateHeight(x);
+        return x;
+    }
+
+    Node* rotateLeft(Node* x) {
+        Node* y = x->right;
+        Node* T2 = y->left;
+        y->left = x;
+        x->right = T2;
+        updateHeight(x);
+        updateHeight(y);
+        return y;
+    }
+
+    Node* balance(Node* node) {
+        updateHeight(node);
+        if (balanceFactor(node) > 1) {
+            if (balanceFactor(node->left) < 0)
+                node->left = rotateLeft(node->left);
+            return rotateRight(node);
+        }
+        if (balanceFactor(node) < -1) {
+            if (balanceFactor(node->right) > 0)
+                node->right = rotateRight(node->right);
+            return rotateLeft(node);
+        }
+        return node;
+    }
+
+    Node* insert(Node* node, File* file) {
+        if (!node) return new Node(file);
+
+        if (file->getSize() < node->file->getSize()) {
+            node->left = insert(node->left, file);
+        } else {
+            node->right = insert(node->right, file);
+        }
+
+        return balance(node);
+    }
+
+    void queryInRange(Node* node, size_t min, size_t max, std::vector<File*>& result) {
+        if (!node) return;
+
+        if (node->file->getSize() >= min && node->file->getSize() <= max) {
+            result.push_back(node->file);
+        }
+
+        if (node->file->getSize() > min) {
+            queryInRange(node->left, min, max, result);
+        }
+
+        if (node->file->getSize() < max) {
+            queryInRange(node->right, min, max, result);
+        }
+    }
+
+public:
+    FileAVL() : root(nullptr) {}
+
+    void addFile(File* file) {
+        root = insert(root, file);
+    }
+
+    std::vector<File*> query(size_t min, size_t max) {
+        if (min > max) std::swap(min, max);
+
+        std::vector<File*> result;
+        queryInRange(root, min, max, result);
+        return result;
+    }
+};
+
+class FileTrie {
+private:
+    struct TrieNode {
+        std::unordered_set<File*> files;
+        std::unordered_map<char, TrieNode*> children;
+    };
+
+    TrieNode* root;
+
+    void toLowerCase(std::string& str) const {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    }
+
+public:
+    FileTrie() : root(new TrieNode()) {}
+
+    void addFile(File* file) {
+        TrieNode* node = root;
+        std::string name = file->getName();
+        toLowerCase(name);
+
+        for (char c : name) {
+            if (node->children.find(c) == node->children.end()) {
+                node->children[c] = new TrieNode();
+            }
+            node = node->children[c];
+        }
+
+        node->files.insert(file);
+    }
+
+    std::unordered_set<File*> getFilesWithPrefix(const std::string& prefix) const {
+        TrieNode* node = root;
+        std::string lowerPrefix = prefix;
+        toLowerCase(lowerPrefix);
+
+        for (char c : lowerPrefix) {
+            if (node->children.find(c) == node->children.end()) {
+                return {};
+            }
+            node = node->children[c];
+        }
+
+        return node->files;
+    }
+};
+
+int main() {
+    // Testing the implementation
+    File f1("fileA.txt", 100);
+    File f2("fileB.txt", 200);
+    File f3("fileC.txt", 150);
+
+    // Testing FileAVL
+    FileAVL fileAVL;
+    fileAVL.addFile(&f1);
+    fileAVL.addFile(&f2);
+    fileAVL.addFile(&f3);
+
+    auto files = fileAVL.query(100, 200);
+    for (auto file : files) {
+        std::cout << "File: " << file->getName() << ", Size: " << file->getSize() << "\n";
+    }
+
+    // Testing FileTrie
+    FileTrie fileTrie;
+    fileTrie.addFile(&f1);
+    fileTrie.addFile(&f2);
+    fileTrie.addFile(&f3);
+
+    auto filesWithPrefix = fileTrie.getFilesWithPrefix("file");
+    for (auto file : filesWithPrefix) {
+        std::cout << "File: " << file->getName() << "\n";
+    }
+
+    return 0;
+}
 
     """
 
