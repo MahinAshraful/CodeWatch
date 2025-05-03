@@ -88,7 +88,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-slate-300 font-medium">AI Likelihood</h4>
             <span className={`${verdictInfo.color} font-bold`}>
-              {Math.round((1 - results.difference) * 100)}%
+              {/* {Math.round((1 - results.difference) * 100)}% */}
             </span>
           </div>
           <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
