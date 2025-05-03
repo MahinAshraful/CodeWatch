@@ -340,7 +340,7 @@ async def detect_ai_generated_enhanced_async(code, num_rewrites=3, min_rewrites=
     }
 
 
-def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
+def detect_ai_generated_enhanced(code, num_rewrites=2, min_rewrites=1):
     """Synchronous wrapper for detect_ai_generated_enhanced_async"""
     return asyncio.run(
         detect_ai_generated_enhanced_async(code, num_rewrites, min_rewrites)
