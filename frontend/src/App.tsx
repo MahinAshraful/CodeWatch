@@ -1,11 +1,11 @@
-import { useState } from 'react'
 import './App.css'
+import CodeDetector from '../components/CodeDetector'
 
 function App() {
 
   return (
     <>
-      <p>hi</p>
+      <CodeDetector></CodeDetector>
     </>
   )
 }
