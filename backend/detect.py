@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoTokenizer
 import torch
 import openai
 import time
+import asyncio
 
 load_dotenv()
 
@@ -35,8 +36,8 @@ def get_code_embedding(code):
         return None
 
 
-def rewrite_code(code, retry_attempts=3, retry_delay=60):
-    """Have GPT rewrite the given code snippet with retry logic."""
+async def rewrite_code_async(code, index=0, retry_attempts=3, retry_delay=60):
+    """Async version of rewrite_code."""
     prompt = f"""
     ### Code:
     {code}
@@ -87,19 +88,28 @@ def rewrite_code(code, retry_attempts=3, retry_delay=60):
                             if len(rewritten_code.split("\n", 1)) > 1
                             else rewritten_code
                         )
+                    print(f"Rewrite {index+1} complete")
                     return rewritten_code.strip()
+            print(f"Rewrite {index+1} failed to parse markdown")
             return content
 
         except openai.RateLimitError as e:
             if attempt < retry_attempts - 1:
-                print(f"Rate limit hit, waiting {retry_delay} seconds before retry...")
-                time.sleep(retry_delay)
+                print(
+                    f"Rate limit hit for rewrite {index+1}, waiting {retry_delay} seconds before retry..."
+                )
+                await asyncio.sleep(retry_delay)  # use asyncio.sleep in async function
             else:
-                print(f"All retry attempts failed: {e}")
+                print(f"All retry attempts failed for rewrite {index+1}: {e}")
                 return code  # Return original code as fallback
         except Exception as e:
-            print(f"Error rewriting code: {e}")
+            print(f"Error during rewrite {index+1}: {e}")
             return code  # Return original code as fallback
+
+
+def rewrite_code(code, retry_attempts=3, retry_delay=60):
+    """Synchronous wrapper for rewrite_code_async"""
+    return asyncio.run(rewrite_code_async(code, 0, retry_attempts, retry_delay))
 
 
 def extract_problem_statement(code, retry_attempts=3, retry_delay=60):
@@ -220,23 +230,20 @@ def generate_code_from_problem(problem_statement, retry_attempts=3, retry_delay=
             return "Could not generate code"
 
 
-def detect_ai_generated(code, num_rewrites=3, min_rewrites=1):
-    """Detect if code is AI-generated based on rewrite similarity."""
-    print("Generating rewrites...")
-    rewrites = []
+async def detect_ai_generated_async(code, num_rewrites=3, min_rewrites=1):
+    """Async version of detect_ai_generated"""
+    print("Generating rewrites asynchronously...")
 
-    for i in range(num_rewrites):
-        try:
-            rewrite = rewrite_code(code)
-            if rewrite and rewrite != code:  # Only add if rewrite was successful
-                rewrites.append(rewrite)
-                print(f"Rewrite {len(rewrites)} complete")
-            else:
-                print(f"Rewrite {i+1} failed, using original as fallback")
-        except Exception as e:
-            print(f"Error during rewrite {i+1}: {e}")
+    # Create tasks for all rewrites to run concurrently
+    rewrite_tasks = [rewrite_code_async(code, i) for i in range(num_rewrites)]
 
-    # Check if we have enough rewrites to make a meaningful calculation
+    # Wait for all rewrites to complete
+    rewrite_results = await asyncio.gather(*rewrite_tasks)
+
+    # Filter out unsuccessful rewrites
+    rewrites = [rewrite for rewrite in rewrite_results if rewrite and rewrite != code]
+
+    # Check if we have enough rewrites
     if len(rewrites) < min_rewrites:
         print(
             f"Warning: Only {len(rewrites)} successful rewrites. Results may be unreliable."
@@ -276,8 +283,13 @@ def detect_ai_generated(code, num_rewrites=3, min_rewrites=1):
     return avg_similarity
 
 
-def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
-    """Enhanced detection comparing similarities between original code and AI-generated code."""
+def detect_ai_generated(code, num_rewrites=3, min_rewrites=1):
+    """Synchronous wrapper for detect_ai_generated_async"""
+    return asyncio.run(detect_ai_generated_async(code, num_rewrites, min_rewrites))
+
+
+async def detect_ai_generated_enhanced_async(code, num_rewrites=3, min_rewrites=1):
+    """Async enhanced detection comparing similarities between original code and AI-generated code."""
     print("====== STEP 1: Extracting Problem Statement ======")
     problem_statement = extract_problem_statement(code)
 
@@ -288,11 +300,14 @@ def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
     print(ai_generated_code)
     print("```")
 
-    print("\n====== STEP 3: Testing Original Code ======")
-    original_similarity = detect_ai_generated(code, num_rewrites, min_rewrites)
+    print("\n====== STEP 3 & 4: Testing Both Codes in Parallel ======")
 
-    print("\n====== STEP 4: Testing AI-Generated Code ======")
-    ai_similarity = detect_ai_generated(ai_generated_code, num_rewrites, min_rewrites)
+    # Run both similarity tests concurrently
+    original_task = detect_ai_generated_async(code, num_rewrites, min_rewrites)
+    ai_task = detect_ai_generated_async(ai_generated_code, num_rewrites, min_rewrites)
+
+    # Wait for both tasks to complete
+    original_similarity, ai_similarity = await asyncio.gather(original_task, ai_task)
 
     # Compare the similarities
     if original_similarity is None or ai_similarity is None:
@@ -323,6 +338,13 @@ def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
         "difference": similarity_diff,
         "result": result,
     }
+
+
+def detect_ai_generated_enhanced(code, num_rewrites=3, min_rewrites=1):
+    """Synchronous wrapper for detect_ai_generated_enhanced_async"""
+    return asyncio.run(
+        detect_ai_generated_enhanced_async(code, num_rewrites, min_rewrites)
+    )
 
 
 # Example usage
