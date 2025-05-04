@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
@@ -20,8 +20,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const [lines, setLines] = useState<number[]>([])
   const [selectedLanguage, setSelectedLanguage] = useState(language)
   const [isLanguageAutoDetected, setIsLanguageAutoDetected] = useState(false)
-
-  // Update line numbers whenever code changes
+  const [isFocused, setIsFocused] = useState(false)
+  const editorRef = useRef<HTMLDivElement>(null)
+  
+  // Calculate line numbers
   useEffect(() => {
     const lineCount = code.split('\n').length
     setLines(Array.from({ length: lineCount }, (_, i) => i + 1))
@@ -38,6 +40,17 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       }
     }
   }, [code, selectedLanguage, isLanguageAutoDetected, onLanguageChange])
+
+  // Add subtle cursor pulse effect when focused
+  useEffect(() => {
+    if (editorRef.current) {
+      if (isFocused) {
+        editorRef.current.classList.add('ring-1', 'ring-blue-500/50')
+      } else {
+        editorRef.current.classList.remove('ring-1', 'ring-blue-500/50')
+      }
+    }
+  }, [isFocused])
 
   const detectLanguage = (codeString: string): string => {
     // Simple language detection based on file extensions, keywords, and syntax patterns
@@ -151,19 +164,29 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   }
 
   return (
-    <div className="rounded-lg overflow-hidden bg-slate-900 border border-slate-700 shadow-lg">
-      <div className="flex items-center justify-between p-2 bg-slate-800 border-b border-slate-700">
-        <div className="flex space-x-1">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+    <div 
+      ref={editorRef}
+      className="rounded-lg overflow-hidden bg-slate-900 border border-slate-700/80 shadow-lg transition-all duration-300 hover:shadow-blue-900/10"
+    >
+      <div className="flex items-center justify-between p-2 bg-slate-800/80 border-b border-slate-700/80">
+        <div className="flex space-x-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500 group cursor-pointer relative">
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs text-slate-300 rounded opacity-0 group-hover:opacity-100 transition-opacity">Close</span>
+          </div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500 group cursor-pointer relative">
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs text-slate-300 rounded opacity-0 group-hover:opacity-100 transition-opacity">Minimize</span>
+          </div>
+          <div className="w-3 h-3 rounded-full bg-green-500 group cursor-pointer relative">
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-xs text-slate-300 rounded opacity-0 group-hover:opacity-100 transition-opacity">Fullscreen</span>
+          </div>
         </div>
         <div className="text-xs text-slate-400 flex items-center">
           {isLanguageAutoDetected && selectedLanguage && (
-            <span className="mr-2 px-1.5 py-0.5 bg-blue-500 bg-opacity-20 text-blue-400 rounded text-xs">
-              Language detected
+            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
+              <span className="hidden sm:inline">Language </span>detected
             </span>
           )}
+          <span className="mx-2 text-slate-600">●</span>
           code-editor.{selectedLanguage === 'javascript' ? 'js' : 
                       selectedLanguage === 'typescript' ? 'ts' : 
                       selectedLanguage === 'python' ? 'py' : 
@@ -176,7 +199,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         <select
           value={selectedLanguage}
           onChange={handleLanguageChange}
-          className="text-xs bg-slate-700 text-slate-300 border border-slate-600 rounded px-2 py-1"
+          className="text-xs bg-slate-700 text-slate-300 border border-slate-600 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
@@ -189,7 +212,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       </div>
       <div className="relative flex">
         {/* Line numbers */}
-        <div className="hidden sm:block py-3 px-2 text-right bg-slate-800 border-r border-slate-700 select-none">
+        <div className="hidden sm:block py-3 px-2 text-right bg-slate-800/50 border-r border-slate-700/80 select-none">
           {lines.map(num => (
             <div key={num} className="text-xs text-slate-500 font-mono leading-5">{num}</div>
           ))}
@@ -198,7 +221,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
 
         {/* Code editor with syntax highlighting */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative group">
           <SyntaxHighlighter
             language={selectedLanguage}
             style={vscDarkPlus}
@@ -206,30 +229,56 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
               background: 'transparent',
               padding: '1rem',
               margin: 0,
-              minHeight: '400px',
+              minHeight: '350px',
               fontSize: '0.875rem',
               fontFamily: 'monospace',
               overflow: 'hidden',
             }}
           >
-            {code}
+            {code || ' '}
           </SyntaxHighlighter>
           <textarea
             value={code}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            className="absolute inset-0 bg-transparent text-transparent caret-slate-200 font-mono text-sm p-3 resize-none focus:outline-none min-h-[400px] w-full"
+            className="absolute inset-0 bg-transparent text-transparent caret-slate-200 font-mono text-sm p-4 resize-none focus:outline-none min-h-[350px] w-full"
             spellCheck="false"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
           />
+          
+          {/* Placeholder when empty */}
+          {!code && (
+            <div className="absolute inset-0 pointer-events-none p-4 flex items-center justify-center">
+              <div className="text-slate-500 text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-400/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                {placeholder}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Bottom toolbar */}
+      <div className="flex items-center justify-between p-2 bg-slate-800/50 border-t border-slate-700/80 text-xs text-slate-500">
+        <div className="flex items-center">
+          <span className="px-2 border-r border-slate-700">{lines.length} lines</span>
+          <span className="px-2">{code.length} chars</span>
+        </div>
+        <div className="flex items-center">
+          <span className="px-2 border-r border-slate-700">{selectedLanguage}</span>
+          <span className="px-2">UTF-8</span>
         </div>
       </div>
     </div>
   )
 }
 
-export default CodeEditor
+export default CodeEditor;
