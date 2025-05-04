@@ -8,6 +8,8 @@ import openai
 import time
 import asyncio
 import warnings
+from model_singleton import model_service
+from transformers import RobertaTokenizer, RobertaModel
 
 warnings.filterwarnings("ignore")
 load_dotenv()
@@ -16,29 +18,15 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# # setting up CodeT5+ for code embeddings
-device = "cuda" if torch.cuda.is_available() else "cpu"
-checkpoint = "Salesforce/codet5p-110m-embedding"
-tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
-model = AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
-
-from transformers import RobertaTokenizer, RobertaModel
+print("Warming up the model...")
+dummy_code = "def hello(): print('Hello, world!')"
+_ = model_service.get_code_embedding(dummy_code)
+print("Model is ready to serve requests")
 
 
 def get_code_embedding(code):
-    """Get code embeddings using CodeT5+."""
-
-    try:
-        inputs = tokenizer.encode(code, return_tensors="pt").to(device)
-        # input length issues
-        if inputs.shape[1] > 512:
-            inputs = inputs[:, :512]
-        with torch.no_grad():
-            embedding = model(inputs)[0]
-        return embedding.cpu().numpy()
-    except Exception as e:
-        print(f"Error getting embedding: {e}")
-        return None
+    """Get code embeddings using CodeT5+ singleton."""
+    return model_service.get_code_embedding(code)
 
     """TRAINED VERSION"""
     # try:
