@@ -7,36 +7,57 @@ import torch
 import openai
 import time
 import asyncio
+import warnings
 
+warnings.filterwarnings("ignore")
 load_dotenv()
 
 # setting up openai
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# setting up CodeT5+ for code embeddings
-device = "cuda" if torch.cuda.is_available() else "cpu"
-checkpoint = "Salesforce/codet5p-110m-embedding"
-tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
-model = AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
+# # setting up CodeT5+ for code embeddings
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+# checkpoint = "Salesforce/codet5p-110m-embedding"
+# tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
+# model = AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
 
+from transformers import RobertaTokenizer, RobertaModel
 
 def get_code_embedding(code):
     """Get code embeddings using CodeT5+."""
+
+    # try:
+    #     inputs = tokenizer.encode(code, return_tensors="pt").to(device)
+    #     # input length issues
+    #     if inputs.shape[1] > 512:
+    #         inputs = inputs[:, :512]
+    #     with torch.no_grad():
+    #         embedding = model(inputs)[0]
+    #     return embedding.cpu().numpy()
+    # except Exception as e:
+    #     print(f"Error getting embedding: {e}")
+    #     return None
+    
+    """TRAINED VERSION"""
     try:
-        inputs = tokenizer.encode(code, return_tensors="pt").to(device)
-        # input length issues
-        if inputs.shape[1] > 512:
-            inputs = inputs[:, :512]
+        model_path = "./training-model/graphcodebert-cpp-simcse"
+        tokenizer = RobertaTokenizer.from_pretrained(model_path)
+        model = RobertaModel.from_pretrained(model_path)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
-            embedding = model(inputs)[0]
-        return embedding.cpu().numpy()
+            outputs = model(**inputs)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
+        return cls_embedding.cpu().numpy()
     except Exception as e:
-        print(f"Error getting embedding: {e}")
+        print(f"Error getting the embedding: {e}")
         return None
 
 
-async def rewrite_code_async(code, index=0, retry_attempts=3, retry_delay=60):
+async def rewrite_code_async(code, index=0, retry_attempts=1, retry_delay=30):
     """Async version of rewrite_code."""
     prompt = f"""
     ### Code:
@@ -107,12 +128,12 @@ async def rewrite_code_async(code, index=0, retry_attempts=3, retry_delay=60):
             return code  # Return original code as fallback
 
 
-def rewrite_code(code, retry_attempts=3, retry_delay=60):
+def rewrite_code(code, retry_attempts=1, retry_delay=30):
     """Synchronous wrapper for rewrite_code_async"""
     return asyncio.run(rewrite_code_async(code, 0, retry_attempts, retry_delay))
 
 
-def extract_problem_statement(code, retry_attempts=3, retry_delay=60):
+def extract_problem_statement(code, retry_attempts=1, retry_delay=30):
     """Extract the problem statement/task that the code is solving using GPT"""
     prompt = f"""
     ### Code:
@@ -164,7 +185,7 @@ def extract_problem_statement(code, retry_attempts=3, retry_delay=60):
             return "Could not extract problem statement"
 
 
-def generate_code_from_problem(problem_statement, retry_attempts=3, retry_delay=60):
+def generate_code_from_problem(problem_statement, retry_attempts=1, retry_delay=30):
     """Generate code from the extracted problem statement using GPT"""
     prompt = f"""
     ### Programming Problem:
@@ -229,8 +250,13 @@ def generate_code_from_problem(problem_statement, retry_attempts=3, retry_delay=
             print(f"Error generating code: {e}")
             return "Could not generate code"
 
+def reshape_embedding(emb):
+    """Ensure embedding is shape (1, D) for cosine similarity."""
+    if isinstance(emb, np.ndarray) and emb.ndim == 1:
+        return emb.reshape(1, -1)
+    return emb  # assume already (1, D)
 
-async def detect_ai_generated_async(code, num_rewrites=3, min_rewrites=1):
+async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     """Async version of detect_ai_generated"""
     print("Generating rewrites asynchronously...")
 
@@ -252,19 +278,22 @@ async def detect_ai_generated_async(code, num_rewrites=3, min_rewrites=1):
     if len(rewrites) == 0:
         print("Cannot calculate similarity without rewrites.")
         return None
-
+    
     print("Getting embeddings...")
     original_embedding = get_code_embedding(code)
     if original_embedding is None:
         print("Failed to get embedding for original code.")
         return None
 
-    # Get embeddings for successful rewrites
+
+    original_embedding = reshape_embedding(original_embedding)
+
     similarities = []
     for i, rewrite in enumerate(rewrites):
         emb = get_code_embedding(rewrite)
         if emb is not None:
-            similarity = cosine_similarity([original_embedding], [emb])[0][0]
+            emb = reshape_embedding(emb)
+            similarity = cosine_similarity(original_embedding, emb)[0][0]
             similarities.append(similarity)
             print(f"Similarity for rewrite {i+1}: {similarity:.4f}")
         else:
@@ -274,21 +303,41 @@ async def detect_ai_generated_async(code, num_rewrites=3, min_rewrites=1):
         print("No similarity scores could be calculated.")
         return None
 
-    # Average similarity score from available results
     avg_similarity = sum(similarities) / len(similarities)
-    print(
-        f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}"
-    )
-
+    print(f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}")
     return avg_similarity
 
 
-def detect_ai_generated(code, num_rewrites=3, min_rewrites=1):
+    # # Get embeddings for successful rewrites
+    # similarities = []
+    # for i, rewrite in enumerate(rewrites):
+    #     emb = get_code_embedding(rewrite)
+    #     if emb is not None:
+    #         similarity = cosine_similarity([original_embedding], [emb])[0][0]
+    #         similarities.append(similarity)
+    #         print(f"Similarity for rewrite {i+1}: {similarity:.4f}")
+    #     else:
+    #         print(f"Failed to get embedding for rewrite {i+1}")
+
+    # if not similarities:
+    #     print("No similarity scores could be calculated.")
+    #     return None
+
+    # # Average similarity score from available results
+    # avg_similarity = sum(similarities) / len(similarities)
+    # print(
+    #     f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}"
+    # )
+
+    # return avg_similarity
+
+
+def detect_ai_generated(code, num_rewrites=1, min_rewrites=1):
     """Synchronous wrapper for detect_ai_generated_async"""
     return asyncio.run(detect_ai_generated_async(code, num_rewrites, min_rewrites))
 
 
-async def detect_ai_generated_enhanced_async(code, num_rewrites=3, min_rewrites=1):
+async def detect_ai_generated_enhanced_async(code, num_rewrites=1, min_rewrites=1):
     """Async enhanced detection comparing similarities between original code and AI-generated code."""
     print("====== STEP 1: Extracting Problem Statement ======")
     problem_statement = extract_problem_statement(code)
@@ -340,7 +389,7 @@ async def detect_ai_generated_enhanced_async(code, num_rewrites=3, min_rewrites=
     }
 
 
-def detect_ai_generated_enhanced(code, num_rewrites=2, min_rewrites=1):
+def detect_ai_generated_enhanced(code, num_rewrites=1, min_rewrites=1):
     """Synchronous wrapper for detect_ai_generated_enhanced_async"""
     return asyncio.run(
         detect_ai_generated_enhanced_async(code, num_rewrites, min_rewrites)
