@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ResultsVisualization from './ResultsVisualization';
 
 interface ResultsDisplayProps {
   results: {
@@ -187,6 +188,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
             </li>
           </ul>
         </div>
+        
+        {/* Visual Analysis Section */}
+        <ResultsVisualization results={results} />
       </div>
     </div>
   );
