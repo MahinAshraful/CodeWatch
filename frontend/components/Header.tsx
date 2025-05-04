@@ -5,13 +5,13 @@ const Header: React.FC = () => {
     <header className="bg-slate-800 border-b border-slate-700">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-<div className="bg-transparent w-8 h-8 rounded-full flex items-center justify-center">
-  <img src="./logo.png" alt="" />
-</div>
+          <a href="/" className="bg-transparent w-9 h-8 rounded-full flex items-center justify-center">
+            <img src="./logo.png" alt="CodeWatch Logo" />
+          </a>
 
 
 
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">CodeWatch</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">CodeWatch</h1>
         </div>
         <nav>
           <ul className="flex space-x-6">
