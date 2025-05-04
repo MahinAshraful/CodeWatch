@@ -6,7 +6,7 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
 <div className="bg-transparent w-8 h-8 rounded-full flex items-center justify-center">
-  <img src="../public/logo.png" alt="" />
+  <img src="./logo.png" alt="" />
 </div>
 
 
