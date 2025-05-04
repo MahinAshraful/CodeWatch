@@ -20,7 +20,6 @@ const CodeDetectionPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('editor') // 'editor' or 'results'
   const [isVisible, setIsVisible] = useState<boolean>(false)
 
-  // Animation effect on mount
   React.useEffect(() => {
     setIsVisible(true)
   }, [])
@@ -35,7 +34,6 @@ const CodeDetectionPage: React.FC = () => {
     setError(null)
     setStage('analyzing')
     
-    // Simulate different stages of processing with real API call
     setTimeout(() => setStage('processing'), 1000)
     setTimeout(() => setStage('comparing'), 2000)
     
@@ -47,7 +45,7 @@ const CodeDetectionPage: React.FC = () => {
         },
         body: JSON.stringify({ 
           code,
-          language // Send the detected language to the backend
+          language
         })
       })
       
@@ -59,7 +57,7 @@ const CodeDetectionPage: React.FC = () => {
       console.log('Detection results:', data)
       setResults(data)
       setStage('finished')
-      setActiveTab('results') // Auto switch to results tab
+      setActiveTab('results') 
       
     } catch (err) {
       console.error('Error detecting code:', err)
@@ -77,9 +75,7 @@ const CodeDetectionPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Hero section with animated heading */}
       <div className={`text-center my-16 transition-all duration-700 ${isVisible ? 'opacity-100' : 'opacity-0 translate-y-8'}`}>
-        {/* Background elements */}
         <div className="relative">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -98,7 +94,6 @@ const CodeDetectionPage: React.FC = () => {
       </div>
 
       <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden border border-slate-700/50 transform transition-all duration-500 hover:shadow-blue-900/5">
-        {/* Tabs */}
         <div className="border-b border-slate-700/50 flex">
           <button 
             className={`py-4 px-6 font-medium text-sm focus:outline-none transition-all duration-300 flex items-center ${

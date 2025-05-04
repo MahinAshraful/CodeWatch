@@ -5,11 +5,9 @@ const HowItWorksPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const sectionsRef = useRef<{[key: string]: HTMLElement | null}>({});
 
-  // Animation on load
   useEffect(() => {
     setIsVisible(true);
-    
-    // Set up intersection observer for sections
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -19,7 +17,6 @@ const HowItWorksPage: React.FC = () => {
       });
     }, { threshold: 0.5 });
     
-    // Observe each section
     Object.values(sectionsRef.current).forEach(section => {
       if (section) observer.observe(section);
     });
@@ -36,7 +33,6 @@ const HowItWorksPage: React.FC = () => {
 
   return (
     <div className={`max-w-6xl mx-auto py-12 px-6 transition-all duration-700 ${isVisible ? 'opacity-100' : 'opacity-0 translate-y-8'}`}>
-      {/* Floating navigation */}
       <div className="fixed right-8 top-1/2 -translate-y-1/2 z-10 hidden xl:block">
         <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 shadow-lg p-3">
           <nav>
@@ -106,9 +102,7 @@ const HowItWorksPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Header */}
       <div className="relative mb-20">
-        {/* Background elements */}
         <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
         
@@ -126,7 +120,6 @@ const HowItWorksPage: React.FC = () => {
   </p>
 </div>
         
-        {/* Navigation Pills */}
         <div className="flex flex-wrap justify-center gap-3 mt-10">
           <button 
             onClick={() => scrollToSection('intuition')}
@@ -172,9 +165,7 @@ const HowItWorksPage: React.FC = () => {
       </div>
       
       <div className="space-y-24">
-        {/* Main content section */}
         <div className="prose prose-invert prose-lg max-w-none">
-          {/* Intuition Section */}
           <section 
             id="intuition" 
             ref={el => sectionsRef.current['intuition'] = el}
@@ -204,13 +195,11 @@ const HowItWorksPage: React.FC = () => {
                 was already created using token prediction, the changes are minimal.
               </p>
 
-              {/* Visual representation */}
               <div className="mt-8 bg-slate-900/60 rounded-xl p-6 border border-slate-800">
                 <div className="flex flex-col lg:flex-row gap-6">
                   <div className="flex-1 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
                     <h3 className="text-blue-400 font-medium mb-3 text-center">AI Code Generation</h3>
                     <div className="relative h-40">
-                      {/* Token prediction visualization */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <svg width="200" height="120" viewBox="0 0 200 120" className="mx-auto">
                           <path 
@@ -242,7 +231,6 @@ const HowItWorksPage: React.FC = () => {
                   <div className="flex-1 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
                     <h3 className="text-green-400 font-medium mb-3 text-center">Human Code Generation</h3>
                     <div className="relative h-40">
-                      {/* Human variation visualization */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <svg width="200" height="120" viewBox="0 0 200 120" className="mx-auto">
                           <path 
@@ -274,7 +262,6 @@ const HowItWorksPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Detection Process Section */}
           <section 
             id="detection" 
             ref={el => sectionsRef.current['detection'] = el}
@@ -377,7 +364,6 @@ const HowItWorksPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Technical Details Section */}
 <section 
   id="technical" 
   ref={el => sectionsRef.current['technical'] = el} 
@@ -408,7 +394,6 @@ const HowItWorksPage: React.FC = () => {
       scores provide confidence metrics to determine the likelihood of AI generation.
     </p>
     
-    {/* Technical representation */}
     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-slate-900/60 rounded-lg p-5 border border-slate-700/50">
         <h3 className="text-blue-400 font-medium mb-3">Embedding Generation Process</h3>
@@ -444,7 +429,6 @@ def compare_embeddings(original, rewrite):
     </div>
   </div>
 </section>
-          {/* Research Paper Section */}
           <section 
             id="research" 
             ref={el => sectionsRef.current['research'] = el}

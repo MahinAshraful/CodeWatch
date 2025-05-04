@@ -14,11 +14,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
   const [animate, setAnimate] = useState(false);
   
   useEffect(() => {
-    // Start animation after component mounts
     setAnimate(true);
   }, []);
   
-  // Function to get color based on AI likelihood
   const getVerdictInfo = () => {
     if (results.result.includes('VERY LIKELY AI-GENERATED')) {
       return {
@@ -71,7 +69,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
   
   return (
     <div className={`rounded-lg overflow-hidden border border-slate-700/80 backdrop-blur-sm transform transition-all ${animate ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-      {/* Banner header with verdict */}
       <div className={`p-5 ${verdictInfo.lightBg} border-b border-slate-700/80`}>
         <div className="flex items-center">
           <div className={`w-10 h-10 rounded-full ${verdictInfo.color} ${verdictInfo.lightBg} flex items-center justify-center mr-3`}>
@@ -88,11 +85,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
         </div>
       </div>
       
-      {/* Main content */}
-      <div className="p-5 bg-slate-900/80">        
-        {/* Metrics grid */}
+      <div className="p-5 bg-slate-900/80">    
         <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {/* Original Similarity */}
           <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50 hover:border-blue-500/30 transition-colors group">
             <div className="flex justify-between items-start mb-2">
               <h4 className="text-slate-400 text-sm">Original Similarity</h4>
@@ -114,7 +108,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
             </div>
           </div>
           
-          {/* AI Generated Similarity */}
           <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50 hover:border-blue-500/30 transition-colors group">
             <div className="flex justify-between items-start mb-2">
               <h4 className="text-slate-400 text-sm">AI Generated Similarity</h4>
@@ -136,7 +129,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
             </div>
           </div>
           
-          {/* Pattern Difference */}
           <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50 hover:border-blue-500/30 transition-colors group">
             <div className="flex justify-between items-start mb-2">
               <h4 className="text-slate-400 text-sm">Pattern Difference</h4>
@@ -159,7 +151,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
           </div>
         </div>
         
-        {/* Interpretation */}
         <div className="bg-slate-800/60 p-4 rounded-lg border border-slate-700/50">
           <h4 className="text-slate-300 font-medium mb-2 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -189,7 +180,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
           </ul>
         </div>
         
-        {/* Visual Analysis Section */}
         <ResultsVisualization results={results} />
       </div>
     </div>

@@ -23,12 +23,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const [isFocused, setIsFocused] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
   
-  // Calculate line numbers
   useEffect(() => {
     const lineCount = code.split('\n').length
     setLines(Array.from({ length: lineCount }, (_, i) => i + 1))
     
-    // Auto-detect language when code changes significantly
     if (code.length > 10 && !isLanguageAutoDetected) {
       const detectedLang = detectLanguage(code)
       if (detectedLang && detectedLang !== selectedLanguage) {
@@ -41,7 +39,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   }, [code, selectedLanguage, isLanguageAutoDetected, onLanguageChange])
 
-  // Add subtle cursor pulse effect when focused
   useEffect(() => {
     if (editorRef.current) {
       if (isFocused) {
@@ -53,7 +50,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   }, [isFocused])
 
   const detectLanguage = (codeString: string): string => {
-    // Simple language detection based on file extensions, keywords, and syntax patterns
     const patterns = {
       javascript: {
         keywords: ['const', 'let', 'var', 'function', 'return', 'import', 'export', 'from', '=>', 'console.log'],
@@ -85,28 +81,24 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       }
     }
 
-    // Score each language based on matching patterns and keywords
     const scores: Record<string, number> = {}
     
     Object.keys(patterns).forEach(lang => {
       const langPatterns = patterns[lang as keyof typeof patterns]
       
-      // Score based on keywords
       langPatterns.keywords.forEach(keyword => {
         if (codeString.includes(keyword)) {
           scores[lang] = (scores[lang] || 0) + 1
         }
       })
       
-      // Score based on regex patterns
       langPatterns.patterns.forEach(pattern => {
         if (pattern.test(codeString)) {
-          scores[lang] = (scores[lang] || 0) + 2 // Patterns are weighted more heavily
+          scores[lang] = (scores[lang] || 0) + 2
         }
       })
     })
     
-    // Check for special cases like shebang lines for scripts
     if (codeString.startsWith('#!/usr/bin/env python') || codeString.startsWith('#!/usr/bin/python')) {
       scores['python'] = (scores['python'] || 0) + 10
     }
@@ -114,7 +106,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       scores['javascript'] = (scores['javascript'] || 0) + 10
     }
     
-    // Find the language with the highest score
     let bestMatch = ''
     let highestScore = 0
     
@@ -125,12 +116,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       }
     })
     
-    // Only return a detected language if the score is above a threshold
     return highestScore >= 3 ? bestMatch : ''
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle tab key to insert spaces instead of changing focus
     if (e.key === 'Tab') {
       e.preventDefault()
 
@@ -138,11 +127,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       const start = target.selectionStart
       const end = target.selectionEnd
 
-      // Insert 2 spaces at cursor position
       const newText = code.substring(0, start) + '  ' + code.substring(end)
       onChange(newText)
 
-      // Move cursor position after the inserted tab
       setTimeout(() => {
         target.selectionStart = target.selectionEnd = start + 2
       }, 0)
@@ -152,14 +139,13 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLanguage = e.target.value
     setSelectedLanguage(newLanguage)
-    setIsLanguageAutoDetected(true) // User has manually selected a language
+    setIsLanguageAutoDetected(true) 
     if (onLanguageChange) {
       onLanguageChange(newLanguage)
     }
   }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // Reset auto-detection flag when new code is pasted
     setIsLanguageAutoDetected(false)
   }
 
@@ -211,16 +197,13 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </select>
       </div>
       <div className="relative flex">
-        {/* Line numbers */}
         <div className="hidden sm:block py-3 px-2 text-right bg-slate-800/50 border-r border-slate-700/80 select-none">
           {lines.map(num => (
             <div key={num} className="text-xs text-slate-500 font-mono leading-5">{num}</div>
           ))}
-          {/* Add an extra line for when user is at the end */}
           <div className="text-xs text-slate-500 font-mono leading-5">{lines.length + 1}</div>
         </div>
 
-        {/* Code editor with syntax highlighting */}
         <div className="flex-1 relative group">
           <SyntaxHighlighter
             language={selectedLanguage}
@@ -252,7 +235,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
             autoCapitalize="off"
           />
           
-          {/* Placeholder when empty */}
           {!code && (
             <div className="absolute inset-0 pointer-events-none p-4 flex items-center justify-center">
               <div className="text-slate-500 text-sm flex items-center">
@@ -266,7 +248,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       </div>
       
-      {/* Bottom toolbar */}
       <div className="flex items-center justify-between p-2 bg-slate-800/50 border-t border-slate-700/80 text-xs text-slate-500">
         <div className="flex items-center">
           <span className="px-2 border-r border-slate-700">{lines.length} lines</span>

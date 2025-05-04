@@ -17,10 +17,8 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ stage }) => {
   const currentIndex = stages.findIndex(s => s.id === stage)
   
   useEffect(() => {
-    // Update progress bar based on current stage
     const newProgress = ((currentIndex + 1) / stages.length) * 100;
     
-    // Animate progress
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev < newProgress) {
@@ -51,7 +49,6 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ stage }) => {
         </div>
       </div>
       
-      {/* Progress bar */}
       <div className="w-full h-1.5 bg-slate-700 rounded-full mb-6 overflow-hidden">
         <div 
           className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-300"
@@ -110,7 +107,6 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ stage }) => {
         ))}
       </div>
       
-      {/* Animated particles for visual flair */}
       <div className="relative h-24 mt-6 overflow-hidden rounded-md bg-slate-800/50">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute w-1 h-1 bg-blue-400 rounded-full animate-pulse" style={{top: '20%', left: '30%', animationDelay: '0.5s'}}></div>

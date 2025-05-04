@@ -5,7 +5,6 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-// Define the type for the results prop
 interface ResultsProps {
   original_similarity: number;
   ai_similarity: number;
@@ -13,7 +12,6 @@ interface ResultsProps {
   result: string;
 }
 
-// Define the type for custom tooltip props
 interface CustomTooltipProps {
   active?: boolean;
   payload?: Array<{
@@ -29,11 +27,9 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
   const [animate, setAnimate] = useState(false);
   
   useEffect(() => {
-    // Start animation after component mounts
     setAnimate(true);
   }, []);
   
-  // Format data for bar chart
   const barData = [
     {
       name: 'Original Code',
@@ -47,7 +43,6 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
     }
   ];
   
-  // Format data for radar chart
   const radarData = [
     {
       subject: 'Original Similarity',
@@ -61,12 +56,11 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
     },
     {
       subject: 'Difference',
-      A: Math.min(results.difference * 10, 1), // Scale difference for better visibility
+      A: Math.min(results.difference * 10, 1), 
       fullMark: 1,
     },
   ];
   
-  // Format data for pie chart - verdict confidence
   const getVerdictData = () => {
     let aiProbability = 0;
     
@@ -87,9 +81,8 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
   };
   
   const pieData = getVerdictData();
-  const COLORS = ['#3b82f6', '#10b981']; // blue for AI, green for human
+  const COLORS = ['#3b82f6', '#10b981']; 
   
-  // Custom tooltip for better appearance
   const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -111,7 +104,6 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
       </h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Similarity Comparison Chart */}
         <div className="bg-slate-800/60 rounded-lg p-5 border border-slate-700/50">
           <h4 className="text-slate-300 font-medium mb-4 text-center">Similarity Comparison</h4>
           <div className="h-64">
@@ -132,7 +124,6 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
           </p>
         </div>
         
-        {/* Verdict Distribution Chart */}
         <div className="bg-slate-800/60 rounded-lg p-5 border border-slate-700/50">
           <h4 className="text-slate-300 font-medium mb-4 text-center">Verdict Assessment</h4>
           <div className="h-64">
@@ -162,7 +153,6 @@ const ResultsVisualization: React.FC<{ results: ResultsProps }> = ({ results }) 
           </p>
         </div>
         
-        {/* Pattern Analysis Radar Chart */}
         <div className="bg-slate-800/60 rounded-lg p-5 border border-slate-700/50 md:col-span-2">
           <h4 className="text-slate-300 font-medium mb-4 text-center">Pattern Analysis</h4>
           <div className="h-72">

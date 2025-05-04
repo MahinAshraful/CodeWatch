@@ -3,7 +3,6 @@ import LoadingIndicator from './LoadingIndicator';
 import TerminalLogDisplay from './TerminalLogDisplay';
 
 const LoadingScreen: React.FC = () => {
-  // sample logs; adjust with your actual logs as needed
   const logs = ['Loading module 1...', 'Loading module 2...', 'Initializing...'];
 
   return (

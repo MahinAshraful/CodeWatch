@@ -8,7 +8,6 @@ const TerminalLogDisplay: React.FC<TerminalLogDisplayProps> = ({ logs }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Auto-scroll to the bottom when logs update
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }

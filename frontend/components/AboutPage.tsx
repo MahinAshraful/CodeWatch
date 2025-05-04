@@ -27,7 +27,6 @@ const AboutPage = () => {
   return (
     <div className="bg-slate-800/60 rounded-xl shadow-xl overflow-hidden border border-slate-700/50 backdrop-blur-sm p-6">
       <div className="max-w-3xl mx-auto">
-        {/* Hero Section with animation */}
         <div className="flex items-center justify-center mb-8">
           <div className="bg-blue-600 w-16 h-16 rounded-xl shadow-lg flex items-center justify-center mr-5 relative overflow-hidden group">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 text-white z-10 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -41,14 +40,12 @@ const AboutPage = () => {
           </h1>
         </div>
       
-        {/* Main content */}
         <div className="space-y-8 text-slate-300">
           <p className="text-xl leading-relaxed text-center">
             A team of developers, researchers, and AI enthusiasts pushing the boundaries 
             of what's possible at the intersection of code and artificial intelligence.
           </p>
           
-          {/* Team section */}
           <div className="mt-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {teamMembers.map((member, index) => (
@@ -74,7 +71,6 @@ const AboutPage = () => {
             </div>
           </div>
           
-          {/* Our Vision Section */}
           <div className="mt-10 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border border-blue-500/20 rounded-xl p-6 shadow-inner">
             <h2 className="text-2xl font-bold text-white mb-4">Our Vision</h2>
             <p className="text-slate-300 leading-relaxed">
@@ -83,7 +79,6 @@ const AboutPage = () => {
             </p>
           </div>
           
-          {/* Footer */}
           <div className="mt-10 pt-6 border-t border-slate-700/30 text-center text-sm text-slate-500">
             <p>© {new Date().getFullYear()} CodeWatch. All rights reserved.</p>
           </div>
