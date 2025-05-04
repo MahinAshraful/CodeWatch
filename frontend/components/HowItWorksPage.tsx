@@ -39,6 +39,21 @@ const HowItWorksPage: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <button 
+                  onClick={() => scrollToSection('research')}
+                  className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+                    activeSection === 'research' 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
+                  }`}
+                  title="Research Paper"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+              </li>
+              <li>
+                <button 
                   onClick={() => scrollToSection('intuition')}
                   className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
                     activeSection === 'intuition' 
@@ -82,21 +97,7 @@ const HowItWorksPage: React.FC = () => {
                   </svg>
                 </button>
               </li>
-              <li>
-                <button 
-                  onClick={() => scrollToSection('research')}
-                  className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
-                    activeSection === 'research' 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
-                  }`}
-                  title="Research Paper"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </button>
-              </li>
+              
             </ul>
           </nav>
         </div>
@@ -121,6 +122,16 @@ const HowItWorksPage: React.FC = () => {
 </div>
         
         <div className="flex flex-wrap justify-center gap-3 mt-10">
+                    <button 
+            onClick={() => scrollToSection('research')}
+            className={`px-4 py-2 rounded-full transition-all font-medium ${
+              activeSection === 'research' 
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Research Paper
+          </button>
           <button 
             onClick={() => scrollToSection('intuition')}
             className={`px-4 py-2 rounded-full transition-all font-medium ${
@@ -151,19 +162,76 @@ const HowItWorksPage: React.FC = () => {
           >
             Technical Details
           </button>
-          <button 
-            onClick={() => scrollToSection('research')}
-            className={`px-4 py-2 rounded-full transition-all font-medium ${
-              activeSection === 'research' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            Research Paper
-          </button>
         </div>
       </div>
       
+              <section 
+            id="research" 
+            ref={el => sectionsRef.current['research'] = el}
+            className="relative mt-24"
+          >
+            <div className="absolute -left-16 top-6 hidden lg:block">
+              <div className={`h-12 w-1 bg-blue-500/50 rounded transition-all ${activeSection === 'research' ? 'opacity-100' : 'opacity-0'}`}></div>
+            </div>
+            
+            <div className="bg-slate-800/30 rounded-2xl p-8 border border-slate-700/50 shadow-lg backdrop-blur-sm">
+              <h2 className="text-3xl font-bold text-gray-100 mb-6 flex items-center">
+                <div className="bg-blue-600/20 p-2 rounded-lg mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                Research Paper
+              </h2>
+              <p className="text-lg text-gray-300">
+                Our research paper, "Detecting AI-Generated Code Using Token Prediction Patterns", explores the 
+                fundamental differences between how humans and AI models approach code generation. The paper 
+                presents a novel detection method based on code rewriting and embedding comparisons, achieving 
+                over 90% accuracy in distinguishing between human-written and AI-generated code samples.
+              </p>
+              <p className="text-lg text-gray-300 mt-4">
+                We demonstrate that while AI models maintain consistent patterns due to their token prediction 
+                nature, human code exhibits greater structural diversity. This key insight forms the basis of 
+                our detection methodology, which we validate across multiple programming languages and coding tasks.
+              </p>
+              
+              <div className="mt-8 flex items-center gap-4">
+                <a 
+                  href="/static/pdfs/research-paper.pdf" 
+                  className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-blue-900/20"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Paper
+                </a>
+                
+                <a 
+                  href="#viewPaper" 
+                  className="px-5 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all duration-300 flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  View Preview
+                </a>
+              </div>
+              
+< div className="mt-6">
+                <embed 
+                  src="/static/pdfs/research-paper.pdf"
+                  type="application/pdf"
+                  className="w-full h-[600px] rounded-lg border border-slate-700"
+                />
+              
+      </div>
+            </div>
+          </section>
+
+
       <div className="space-y-24">
         <div className="prose prose-invert prose-lg max-w-none">
           <section 
@@ -429,71 +497,7 @@ def compare_embeddings(original, rewrite):
     </div>
   </div>
 </section>
-          <section 
-            id="research" 
-            ref={el => sectionsRef.current['research'] = el}
-            className="relative mt-24"
-          >
-            <div className="absolute -left-16 top-6 hidden lg:block">
-              <div className={`h-12 w-1 bg-blue-500/50 rounded transition-all ${activeSection === 'research' ? 'opacity-100' : 'opacity-0'}`}></div>
-            </div>
-            
-            <div className="bg-slate-800/30 rounded-2xl p-8 border border-slate-700/50 shadow-lg backdrop-blur-sm">
-              <h2 className="text-3xl font-bold text-gray-100 mb-6 flex items-center">
-                <div className="bg-blue-600/20 p-2 rounded-lg mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                Research Paper
-              </h2>
-              <p className="text-lg text-gray-300">
-                Our research paper, "Detecting AI-Generated Code Using Token Prediction Patterns", explores the 
-                fundamental differences between how humans and AI models approach code generation. The paper 
-                presents a novel detection method based on code rewriting and embedding comparisons, achieving 
-                over 90% accuracy in distinguishing between human-written and AI-generated code samples.
-              </p>
-              <p className="text-lg text-gray-300 mt-4">
-                We demonstrate that while AI models maintain consistent patterns due to their token prediction 
-                nature, human code exhibits greater structural diversity. This key insight forms the basis of 
-                our detection methodology, which we validate across multiple programming languages and coding tasks.
-              </p>
-              
-              <div className="mt-8 flex items-center gap-4">
-                <a 
-                  href="/static/pdfs/research-paper.pdf" 
-                  className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-blue-900/20"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download Paper
-                </a>
-                
-                <a 
-                  href="#viewPaper" 
-                  className="px-5 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all duration-300 flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  View Preview
-                </a>
-              </div>
-              
-< div className="mt-6">
-                <embed 
-                  src="/static/pdfs/research-paper.pdf"
-                  type="application/pdf"
-                  className="w-full h-[600px] rounded-lg border border-slate-700"
-                />
-              
-      </div>
-            </div>
-          </section>
+          
         </div>
       </div>
     </div>
