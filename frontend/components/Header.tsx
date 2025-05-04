@@ -14,8 +14,8 @@ const Header: React.FC = () => {
         </div>
         <nav>
           <ul className="flex space-x-6">
-            <li><a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">How It Works</a></li>
-            <li><a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">About</a></li>
+            <li><a href="/how-it-works" className="text-blue-400 hover:text-blue-300 transition-colors">How It Works</a></li>
+            <li><a href="/about" className="text-blue-400 hover:text-blue-300 transition-colors">About</a></li>
             <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">GitHub</a></li>
           </ul>
         </nav>
