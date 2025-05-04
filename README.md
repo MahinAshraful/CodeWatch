@@ -16,7 +16,7 @@ We can leverage this to detect AI generated code.
 
 ### Visualization
 
-![CodeWatch Process Flow](process.png)
+![CodeWatch Process Flow](codewatchflow.png)
 
 ### Steps
 
