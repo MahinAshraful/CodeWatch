@@ -33,6 +33,10 @@ We can leverage this to detect AI generated code.
 4. We rewrite our code k times. We used k=2 in order to avoid rate limits but k >= 4 is idea according to the paper.
 5. We create embeddings of all of the code snippets that we now have. Then we apply cosine similarity to conduct comparisons of the embeddings. We compare the difference between the original code (reminder, this can be AI generated or human written) rewrites and the AI code rewrites. If there is substantial deviation, it is likely human written. If the deviation is small, then it is most likely AI geneated
 
+## Core Product Demo
+
+![CodeWatch Core Product Demo](codewatchcoredemo.gif)
+
 ## Features
 
 - AI code detection using novel research techniques
