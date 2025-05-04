@@ -17,44 +17,45 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # # setting up CodeT5+ for code embeddings
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# checkpoint = "Salesforce/codet5p-110m-embedding"
-# tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
-# model = AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+checkpoint = "Salesforce/codet5p-110m-embedding"
+tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
+model = AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
 
 from transformers import RobertaTokenizer, RobertaModel
+
 
 def get_code_embedding(code):
     """Get code embeddings using CodeT5+."""
 
-    # try:
-    #     inputs = tokenizer.encode(code, return_tensors="pt").to(device)
-    #     # input length issues
-    #     if inputs.shape[1] > 512:
-    #         inputs = inputs[:, :512]
-    #     with torch.no_grad():
-    #         embedding = model(inputs)[0]
-    #     return embedding.cpu().numpy()
-    # except Exception as e:
-    #     print(f"Error getting embedding: {e}")
-    #     return None
-    
-    """TRAINED VERSION"""
     try:
-        model_path = "./training-model/graphcodebert-cpp-simcse"
-        tokenizer = RobertaTokenizer.from_pretrained(model_path)
-        model = RobertaModel.from_pretrained(model_path)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        inputs = tokenizer.encode(code, return_tensors="pt").to(device)
+        # input length issues
+        if inputs.shape[1] > 512:
+            inputs = inputs[:, :512]
         with torch.no_grad():
-            outputs = model(**inputs)
-        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
-        return cls_embedding.cpu().numpy()
+            embedding = model(inputs)[0]
+        return embedding.cpu().numpy()
     except Exception as e:
-        print(f"Error getting the embedding: {e}")
+        print(f"Error getting embedding: {e}")
         return None
+
+    """TRAINED VERSION"""
+    # try:
+    #     model_path = "./training-model/graphcodebert-cpp-simcse"
+    #     tokenizer = RobertaTokenizer.from_pretrained(model_path)
+    #     model = RobertaModel.from_pretrained(model_path)
+    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #     model.to(device)
+    #     inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
+    #     inputs = {k: v.to(device) for k, v in inputs.items()}
+    #     with torch.no_grad():
+    #         outputs = model(**inputs)
+    #     cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
+    #     return cls_embedding.cpu().numpy()
+    # except Exception as e:
+    #     print(f"Error getting the embedding: {e}")
+    #     return None
 
 
 async def rewrite_code_async(code, index=0, retry_attempts=1, retry_delay=30):
@@ -250,11 +251,13 @@ def generate_code_from_problem(problem_statement, retry_attempts=1, retry_delay=
             print(f"Error generating code: {e}")
             return "Could not generate code"
 
+
 def reshape_embedding(emb):
     """Ensure embedding is shape (1, D) for cosine similarity."""
     if isinstance(emb, np.ndarray) and emb.ndim == 1:
         return emb.reshape(1, -1)
     return emb  # assume already (1, D)
+
 
 async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     """Async version of detect_ai_generated"""
@@ -278,13 +281,12 @@ async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     if len(rewrites) == 0:
         print("Cannot calculate similarity without rewrites.")
         return None
-    
+
     print("Getting embeddings...")
     original_embedding = get_code_embedding(code)
     if original_embedding is None:
         print("Failed to get embedding for original code.")
         return None
-
 
     original_embedding = reshape_embedding(original_embedding)
 
@@ -304,9 +306,10 @@ async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
         return None
 
     avg_similarity = sum(similarities) / len(similarities)
-    print(f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}")
+    print(
+        f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}"
+    )
     return avg_similarity
-
 
     # # Get embeddings for successful rewrites
     # similarities = []
