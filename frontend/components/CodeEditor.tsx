@@ -58,10 +58,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         keywords: ['public', 'class', 'static', 'void', 'main', 'String[]', 'extends', 'implements', 'new'],
         patterns: [/public\s+class/, /public\s+static\s+void\s+main/, /String\[\]\s+args/, /\w+\s+extends\s+\w+/]
       },
-      csharp: {
-        keywords: ['using', 'namespace', 'class', 'public', 'static', 'void', 'string[]', 'Console.WriteLine'],
-        patterns: [/using\s+\w+;/, /namespace\s+\w+/, /Console\.Write(Line)?\s*\(/, /\w+\s*:\s*\w+/]
-      },
       cpp: {
         keywords: ['#include', 'int main', 'std::', 'cout', 'cin', 'vector<', 'template<'],
         patterns: [/#include\s*<\w+>/, /int\s+main\s*\(/, /std::\w+/, /cout\s*<</, /cin\s*>>/]
@@ -172,7 +168,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                       selectedLanguage === 'typescript' ? 'ts' : 
                       selectedLanguage === 'python' ? 'py' : 
                       selectedLanguage === 'java' ? 'java' : 
-                      selectedLanguage === 'csharp' ? 'cs' : 
                       selectedLanguage === 'cpp' ? 'cpp' : 
                       selectedLanguage === 'html' ? 'html' : 
                       selectedLanguage === 'css' ? 'css' : 'txt'}
@@ -187,7 +182,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           <option value="typescript">TypeScript</option>
           <option value="python">Python</option>
           <option value="java">Java</option>
-          <option value="csharp">C#</option>
           <option value="cpp">C++</option>
           <option value="html">HTML</option>
           <option value="css">CSS</option>
