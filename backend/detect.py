@@ -26,24 +26,24 @@ print("Model is ready to serve requests")
 
 def get_code_embedding(code):
     """Get code embeddings using CodeT5+ singleton."""
-    return model_service.get_code_embedding(code)
+    # return model_service.get_code_embedding(code)
 
     """TRAINED VERSION"""
-    # try:
-    #     model_path = "./training-model/graphcodebert-cpp-simcse"
-    #     tokenizer = RobertaTokenizer.from_pretrained(model_path)
-    #     model = RobertaModel.from_pretrained(model_path)
-    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #     model.to(device)
-    #     inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
-    #     inputs = {k: v.to(device) for k, v in inputs.items()}
-    #     with torch.no_grad():
-    #         outputs = model(**inputs)
-    #     cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
-    #     return cls_embedding.cpu().numpy()
-    # except Exception as e:
-    #     print(f"Error getting the embedding: {e}")
-    #     return None
+    try:
+        model_path = "./training-model/graphcodebert-cpp-simcse"
+        tokenizer = RobertaTokenizer.from_pretrained(model_path)
+        model = RobertaModel.from_pretrained(model_path)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
+        return cls_embedding.cpu().numpy()
+    except Exception as e:
+        print(f"Error getting the embedding: {e}")
+        return None
 
 
 async def rewrite_code_async(code, index=0, retry_attempts=1, retry_delay=30):
