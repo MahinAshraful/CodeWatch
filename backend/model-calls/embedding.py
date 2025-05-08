@@ -11,9 +11,8 @@ def get_code_embedding(code: str) ->  np.ndarray:
     Returns:
         np.ndarray: A (1, D) array
     """
-
+    
     try:
-
         # Loading model and setting up
         model_path = "CodeWatch/training-model/graphcodebert-cpp-simcse"
         tokenizer = RobertaTokenizer.from_pretrained(model_path)

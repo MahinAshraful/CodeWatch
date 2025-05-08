@@ -3,3 +3,4 @@ __pycache__/
 venv/
 \graphcodebert-cpp-simcse
 \sample-data
+detect-copy.py
