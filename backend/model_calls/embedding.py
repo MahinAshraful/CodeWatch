@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import os
 from transformers import RobertaTokenizer, RobertaModel
 
 def get_code_embedding(code: str) ->  np.ndarray:
@@ -11,10 +12,14 @@ def get_code_embedding(code: str) ->  np.ndarray:
     Returns:
         np.ndarray: A (1, D) array
     """
-    
+
     try:
         # Loading model and setting up
-        model_path = "CodeWatch/training-model/graphcodebert-cpp-simcse"
+        # model_path = "CodeWatch/training-model/graphcodebert-cpp-simcse"
+        model_path = os.path.join(os.path.dirname(__file__), "..", "..", "training-model", "graphcodebert-cpp-simcse")
+        print(model_path)
+        model_path = os.path.abspath(model_path) 
+        print(model_path)
         tokenizer = RobertaTokenizer.from_pretrained(model_path)
         model = RobertaModel.from_pretrained(model_path)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

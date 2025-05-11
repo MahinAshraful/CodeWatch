@@ -1,19 +1,49 @@
-import openai
 import os
-import asyncio
-import time
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
+from transformers import AutoModel, AutoTokenizer
+import torch
+import openai
+import time
+import asyncio
 import warnings
-
-from embedding import get_code_embedding
+from model_singleton import model_service
+from transformers import RobertaTokenizer, RobertaModel
 
 warnings.filterwarnings("ignore")
 load_dotenv()
 
-# --- Import OpenAI key and setup client ---
+# setting up openai
+openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+print("Warming up the model...")
+dummy_code = "def hello(): print('Hello, world!')"
+_ = model_service.get_code_embedding(dummy_code)
+print("Model is ready to serve requests")
+
+
+def get_code_embedding(code):
+    """Get code embeddings using CodeT5+ singleton."""
+    # return model_service.get_code_embedding(code)
+
+    """TRAINED VERSION"""
+    try:
+        model_path = "./training-model/graphcodebert-cpp-simcse"
+        tokenizer = RobertaTokenizer.from_pretrained(model_path)
+        model = RobertaModel.from_pretrained(model_path)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS] token
+        return cls_embedding.cpu().numpy()
+    except Exception as e:
+        print(f"Error getting the embedding: {e}")
+        return None
 
 
 async def rewrite_code_async(code, index=0, retry_attempts=1, retry_delay=30):
@@ -92,20 +122,8 @@ def rewrite_code(code, retry_attempts=1, retry_delay=30):
     return asyncio.run(rewrite_code_async(code, 0, retry_attempts, retry_delay))
 
 
-def extract_problem_statement(code: str, retry_attempts: int = 1, retry_delay: int = 30) -> str:
-    """Extract the problem statement/task that the code is solving using GPT
-    
-    Args:
-        code (str): A code snippet to have its problem statement/task extracted
-    
-    
-    """
-
-
-
-
-
-    # --- Prompt engineering to extract problem statement/task ---
+def extract_problem_statement(code, retry_attempts=1, retry_delay=30):
+    """Extract the problem statement/task that the code is solving using GPT"""
     prompt = f"""
     ### Code:
     {code}
@@ -126,9 +144,6 @@ def extract_problem_statement(code: str, retry_attempts: int = 1, retry_delay: i
     3. Return ONLY the problem statement with no additional text
     4. Remember your explanation is a prompt to try to REPLICATE this code by giving your output as a prompt to AI
     """
-    # --- End of prompt template ---
-
-
 
     for attempt in range(retry_attempts):
         try:
@@ -284,6 +299,30 @@ async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     )
     return avg_similarity
 
+    # # Get embeddings for successful rewrites
+    # similarities = []
+    # for i, rewrite in enumerate(rewrites):
+    #     emb = get_code_embedding(rewrite)
+    #     if emb is not None:
+    #         similarity = cosine_similarity([original_embedding], [emb])[0][0]
+    #         similarities.append(similarity)
+    #         print(f"Similarity for rewrite {i+1}: {similarity:.4f}")
+    #     else:
+    #         print(f"Failed to get embedding for rewrite {i+1}")
+
+    # if not similarities:
+    #     print("No similarity scores could be calculated.")
+    #     return None
+
+    # # Average similarity score from available results
+    # avg_similarity = sum(similarities) / len(similarities)
+    # print(
+    #     f"Average similarity score (from {len(similarities)} rewrites): {avg_similarity:.4f}"
+    # )
+
+    # return avg_similarity
+
+
 def detect_ai_generated(code, num_rewrites=1, min_rewrites=1):
     """Synchronous wrapper for detect_ai_generated_async"""
     return asyncio.run(detect_ai_generated_async(code, num_rewrites, min_rewrites))
@@ -348,6 +387,7 @@ def detect_ai_generated_enhanced(code, num_rewrites=1, min_rewrites=1):
     )
 
 
+# Example usage
 if __name__ == "__main__":
     # Test code
     code_to_test = """
