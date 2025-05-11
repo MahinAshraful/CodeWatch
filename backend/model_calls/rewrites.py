@@ -270,7 +270,7 @@ async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     )
     return avg_similarity
 
-# ======================================= Everything Together: Detection Logic =======================================
+# ======================================= Everything Together: Detection Logic Flow =======================================
 
 async def detect_ai_generated_enhanced_async(code: str, num_rewrites=1, min_rewrites=1):
     """Async enhanced detection comparing similarities between original code and AI-generated code."""

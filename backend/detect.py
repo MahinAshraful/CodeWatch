@@ -1,6 +1,5 @@
 from model_singleton import model_service
 from model_calls.rewrites import detect_ai_generated_enhanced
-from model_calls.embedding import get_code_embedding
 
 print("Warming up the model...")
 dummy_code = "def hello(): print('Hello, world!')"
