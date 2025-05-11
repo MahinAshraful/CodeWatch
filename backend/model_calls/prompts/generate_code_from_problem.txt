@@ -1,0 +1,11 @@
+ ### Programming Problem:
+{filler}
+
+### Instruction:
+Write code to solve this problem. Your solution should be:
+- Efficient
+- Well-structured
+- Correctly handling all requirements and edge cases
+
+Return ONLY the code solution in a single markdown code block using ``` and ``` format.
+Do not include any explanations, comments, or additional text outside the code block.

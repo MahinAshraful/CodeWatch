@@ -1,0 +1,18 @@
+### Code:
+{filler}
+
+### Instruction:
+Analyze the given code and extract the exact programming problem or task it's solving.
+
+Format your response as a clear, detailed programming challenge that precisely describes what the code accomplishes.
+Your description should include:
+- Input format and requirements
+- Expected output and requirements
+- Any constraints or edge cases
+- Any other important part of the code like test cases etc
+
+Important: 
+1. Be specific about what problem the code solves, not how it solves it
+2. Provide enough detail that someone could implement the solution without seeing the original code
+3. Return ONLY the problem statement with no additional text
+4. Remember your explanation is a prompt to try to REPLICATE this code by giving your output as a prompt to AI

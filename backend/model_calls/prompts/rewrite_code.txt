@@ -1,0 +1,12 @@
+    ### Code:
+    {filler}
+    ### Instruction:
+    Please explain the functionality of the given code, then rewrite it in a single markdown code block. First find out what the code is doing and what is for, and then rewrite it from scratch. No additional clarifications.
+    
+    Format your response following this structure exactly:
+    
+    1. Brief explanation of what the code does
+    2. A code block with your rewrite, using the ``` and ``` format
+    3. Any other important part of the code like test cases etc
+    
+    Important: Provide ONLY the explanation and code block. Do not add ANY other text.
