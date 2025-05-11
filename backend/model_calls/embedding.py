@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-import os
+from pathlib import Path
 from transformers import RobertaTokenizer, RobertaModel
 
 def get_code_embedding(code: str) ->  np.ndarray:
@@ -10,22 +10,24 @@ def get_code_embedding(code: str) ->  np.ndarray:
         code (str): The code snippet to be embedded
 
     Returns:
-        np.ndarray: A (1, D) array
+        np.ndarray: A (1, D) array representing the [CLS] embedding vector. 
+                    [CLS] is the special token that's treated as a representative summary
+                    of the code snippet
     """
 
     try:
-        # Loading model and setting up
-        # model_path = "CodeWatch/training-model/graphcodebert-cpp-simcse"
-        model_path = os.path.join(os.path.dirname(__file__), "..", "..", "training-model", "graphcodebert-cpp-simcse")
-        print(model_path)
-        model_path = os.path.abspath(model_path) 
-        print(model_path)
+        # Getting the absolute path of the fine-tuned model
+        model_path = Path(__file__).resolve().parent.parent.parent / "training-model" / "graphcodebert-cpp-simcse"
+
+        # Initializing the tokenizer and model
         tokenizer = RobertaTokenizer.from_pretrained(model_path)
         model = RobertaModel.from_pretrained(model_path)
+
+        # Using CUDA if exist for faster inferencing
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
 
-        # Tokenize move to device of choice
+        # Tokenizing the code snippet and transferring them to CPU/GPU
         inputs = tokenizer(code, return_tensors="pt", truncation=True, max_length=512)
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -39,3 +41,11 @@ def get_code_embedding(code: str) ->  np.ndarray:
     except Exception as e:
         print(f"Error getting the embedding: {e}")
         return None
+
+def main():
+    print(get_code_embedding("Hello, World!"))
+
+    pass
+
+if __name__ == "__main__":
+    main()
