@@ -22,7 +22,7 @@ def get_code_embedding(code: str) ->  np.ndarray:
 
     # --- OR ---
 
-    # Using fine-tuned model (Comment the above line of code then uncomment below)
+    # Using fine-tuned model (Comment the above line)
     try:
         # Getting the absolute path of the fine-tuned model
         model_path = Path(__file__).resolve().parent.parent.parent / "training-model" / "graphcodebert-cpp-simcse"
@@ -55,8 +55,8 @@ def reshape_embedding(emb: np.ndarray) -> np.ndarray:
     Reshapes a 1D embedding vector into a 2D row vector of shape (1, D).
 
     Crucial for compatibility with functions like cosine similarity,
-    which expect inputs with shape (N, D). If the input is already 2D, it
-    is returned unchanged.
+    which expect inputs with shape (N, D). If the input is already 2D, 
+    it is returned unchanged.
 
     Args:
         emb (np.ndarray): A 1D or 2D NumPy array representing an embedding.
@@ -65,8 +65,7 @@ def reshape_embedding(emb: np.ndarray) -> np.ndarray:
         np.ndarray: A 2D NumPy array with shape (1, D).
     """
 
-    # Reshape if not 2 dimension
-    if isinstance(emb, np.ndarray) and emb.ndim == 1:
+    if isinstance(emb, np.ndarray) and emb.ndim == 1:   # Reshape if not 2 dimension
         return emb.reshape(1, -1)
     
-    return emb  # assume already (1, D)
+    return emb                                          # Else already (1, D)
