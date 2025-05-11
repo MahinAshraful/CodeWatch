@@ -18,7 +18,7 @@ def get_code_embedding(code: str) ->  np.ndarray:
     """
     
     # Using CodeT5
-    return model_service.get_code_embedding(code)
+    # return model_service.get_code_embedding(code)
 
     # --- OR ---
 
@@ -26,10 +26,25 @@ def get_code_embedding(code: str) ->  np.ndarray:
     try:
         # Getting the absolute path of the fine-tuned model
         model_path = Path(__file__).resolve().parent.parent.parent / "training-model" / "graphcodebert-cpp-simcse"
+        
+        # Convert to string and make sure it exists
+        model_path_str = str(model_path)
+        print(f"Loading model from: {model_path_str}")
+        
+        if not Path(model_path_str).exists():
+            print(f"Model path does not exist: {model_path_str}")
+            return model_service.get_code_embedding(code)  # Fallback to model_service
 
-        # Initializing the tokenizer and model
-        tokenizer = RobertaTokenizer.from_pretrained(model_path)
-        model = RobertaModel.from_pretrained(model_path)
+        # Initializing the tokenizer and model - specify local_files_only=True to ensure local loading
+        tokenizer = RobertaTokenizer.from_pretrained(
+            model_path_str, 
+            local_files_only=True
+        )
+        
+        model = RobertaModel.from_pretrained(
+            model_path_str,
+            local_files_only=True
+        )
 
         # Using CUDA if exist for faster inferencing
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -48,7 +63,9 @@ def get_code_embedding(code: str) ->  np.ndarray:
     
     except Exception as e:
         print(f"Error getting the embedding: {e}")
-        return None
+        print("Falling back to model_service...")
+        # Fallback to model_service if custom model fails
+        return model_service.get_code_embedding(code)
 
 def reshape_embedding(emb: np.ndarray) -> np.ndarray:
     """
