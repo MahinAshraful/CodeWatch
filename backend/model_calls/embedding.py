@@ -1,20 +1,28 @@
 import torch
 import numpy as np
 from pathlib import Path
+from model_singleton import model_service
 from transformers import RobertaTokenizer, RobertaModel
 
 def get_code_embedding(code: str) ->  np.ndarray:
-    """Takes in a code snippet and returns its vector embedding
+    """
+    Takes in a code snippet and returns its vector embedding.
 
     Args: 
-        code (str): The code snippet to be embedded
+        code (str): The code snippet to be embedded.
 
     Returns:
         np.ndarray: A (1, D) array representing the [CLS] embedding vector. 
                     [CLS] is the special token that's treated as a representative summary
-                    of the code snippet
+                    of the code snippet.
     """
+    
+    # Using CodeT5
+    return model_service.get_code_embedding(code)
 
+    # --- OR ---
+
+    # Using fine-tuned model (Comment the above line of code then uncomment below)
     try:
         # Getting the absolute path of the fine-tuned model
         model_path = Path(__file__).resolve().parent.parent.parent / "training-model" / "graphcodebert-cpp-simcse"
@@ -42,16 +50,23 @@ def get_code_embedding(code: str) ->  np.ndarray:
         print(f"Error getting the embedding: {e}")
         return None
 
-def reshape_embedding(emb):
-    """Ensure embedding is shape (1, D) for cosine similarity."""
+def reshape_embedding(emb: np.ndarray) -> np.ndarray:
+    """
+    Reshapes a 1D embedding vector into a 2D row vector of shape (1, D).
+
+    Crucial for compatibility with functions like cosine similarity,
+    which expect inputs with shape (N, D). If the input is already 2D, it
+    is returned unchanged.
+
+    Args:
+        emb (np.ndarray): A 1D or 2D NumPy array representing an embedding.
+
+    Returns:
+        np.ndarray: A 2D NumPy array with shape (1, D).
+    """
+
+    # Reshape if not 2 dimension
     if isinstance(emb, np.ndarray) and emb.ndim == 1:
         return emb.reshape(1, -1)
+    
     return emb  # assume already (1, D)
-
-def main():
-    print(get_code_embedding("Hello, World!"))
-
-    pass
-
-if __name__ == "__main__":
-    main()
