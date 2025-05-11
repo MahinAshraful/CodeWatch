@@ -2,15 +2,13 @@ import openai
 import os
 import asyncio
 import time
-import numpy as np
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
-
 from dotenv import load_dotenv
 from typing import Any
 import warnings
 
-from .embedding import get_code_embedding
+from .embedding import get_code_embedding, reshape_embedding        # Getting embedding utilities
 
 warnings.filterwarnings("ignore")
 load_dotenv()
@@ -32,26 +30,41 @@ def load_prompt(template_path: str, code: str) -> str:
 
     template = Path(template_path).read_text()
 
+    # inject the code in {filler} spot in the template 
     return template.format(filler=code)
-    
-# --- Rewriting function and its Synchronous Wrapper ---
+
+# ======================================= API Call Related Functions =======================================
+
 async def rewrite_code_async(code: str, index: int = 0, retry_attempts: int = 1, retry_delay: int = 30):
-    """This function takes in a code snippnet"""
+    """
+    Takes in a code snippnet and sends to LLM services for rewriting
+
+    Args:
+        code (str): A code snippet to have its problem statement/task extracted.
+        index (int): A number for tracking the number of rewrites
+        retry_attempts (int): Number of retries on rate limit.
+        retry_delay (int): Delay in seconds between retries. Prevent spamming.
+    
+    Returns:
+        str: The rewritten code, or an error if fails.
+    """
 
     # Load prompt template and inject the problem statement inside
     PROMPT_PATH = Path(__file__).resolve().parent / "prompts/rewrite_code.txt"
     prompt = load_prompt(PROMPT_PATH, code)
 
-    return prompt
-
     for attempt in range(retry_attempts):
+        
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that rewrites code in the way you would do it. Return only the explanation and code block with no additional text.",
+                        "content": (
+                            "You are a helpful assistant that rewrites code in the way you would do it. "
+                            "Return only the explanation and code block with no additional text."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -83,7 +96,7 @@ async def rewrite_code_async(code: str, index: int = 0, retry_attempts: int = 1,
                     return rewritten_code.strip()
             print(f"Rewrite {index+1} failed to parse markdown")
             return content
-
+        
         except openai.RateLimitError as e:
             if attempt < retry_attempts - 1:
                 print(
@@ -92,27 +105,26 @@ async def rewrite_code_async(code: str, index: int = 0, retry_attempts: int = 1,
                 await asyncio.sleep(retry_delay)  # use asyncio.sleep in async function
             else:
                 print(f"All retry attempts failed for rewrite {index+1}: {e}")
-                return code  # Return original code as fallback
+                return code  # Return original code as fallback    
         except Exception as e:
             print(f"Error during rewrite {index+1}: {e}")
             return code  # Return original code as fallback
-def rewrite_code(code, retry_attempts=1, retry_delay=30):
-    """Synchronous wrapper for rewrite_code_async"""
+        
+def rewrite_code(code: str, retry_attempts: int = 1, retry_delay: int = 30):
+    """Synchronous wrapper for `rewrite_code_async`."""
     return asyncio.run(rewrite_code_async(code, 0, retry_attempts, retry_delay))
-# --- End: Rewriting function and its Synchronous Wrapper ---
 
-# --- DONE ---
 def extract_problem_statement(code: str, retry_attempts: int = 1, retry_delay: int = 30) -> str:
     """
     Extract the problem statement/task that the code is solving using GPT.
     
     Args:
         code (str): A code snippet to have its problem statement/task extracted.
-        retry_attempts (int): Nmber of retries on rate limit
-        retry_delay (int): Delay in seconds between retries. Prevent spamming
+        retry_attempts (int): Number of retries on rate limit.
+        retry_delay (int): Delay in seconds between retries. Prevent spamming.
     
     Returns:
-        str: The extracted problem statement, or an error if fails
+        str: The extracted problem statement, or an error if fails.
     
     """
 
@@ -150,7 +162,6 @@ def extract_problem_statement(code: str, retry_attempts: int = 1, retry_delay: i
             print(f"Error extracting problem statement: {e}")
             return "Could not extract problem statement"
 
-# --- DONE ---
 def generate_code_from_problem(problem_statement, retry_attempts=1, retry_delay=30):
     """Generate code from the extracted problem statement using GPT"""
 
@@ -207,14 +218,6 @@ def generate_code_from_problem(problem_statement, retry_attempts=1, retry_delay=
             print(f"Error generating code: {e}")
             return "Could not generate code"
 
-
-def reshape_embedding(emb):
-    """Ensure embedding is shape (1, D) for cosine similarity."""
-    if isinstance(emb, np.ndarray) and emb.ndim == 1:
-        return emb.reshape(1, -1)
-    return emb  # assume already (1, D)
-
-
 async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     """Async version of detect_ai_generated"""
     print("Generating rewrites asynchronously...")
@@ -267,7 +270,8 @@ async def detect_ai_generated_async(code, num_rewrites=1, min_rewrites=1):
     )
     return avg_similarity
 
-# --- Detection and its synchronous wrapper ---
+# ======================================= Everything Together: Detection Logic =======================================
+
 async def detect_ai_generated_enhanced_async(code: str, num_rewrites=1, min_rewrites=1):
     """Async enhanced detection comparing similarities between original code and AI-generated code."""
     
@@ -319,27 +323,18 @@ async def detect_ai_generated_enhanced_async(code: str, num_rewrites=1, min_rewr
         "difference": similarity_diff,
         "result": result,
     }
-
 def detect_ai_generated_enhanced(code: str, num_rewrites: int = 1, min_rewrites: int = 1) -> dict[str: Any]:
     """Synchronous wrapper for detect_ai_generated_enhanced_async"""
 
     return asyncio.run(
         detect_ai_generated_enhanced_async(code, num_rewrites, min_rewrites)
     )
-# --- End: Detection and its synchronous wrapper ---
+
+
+# --- Extraneous Functions ---
 
 # def detect_ai_generated(code, num_rewrites=1, min_rewrites=1):
 #     """Synchronous wrapper for detect_ai_generated_async"""
 #     return asyncio.run(detect_ai_generated_async(code, num_rewrites, min_rewrites))
 
-if __name__ == "__main__":
-    # # Test code
-    code_to_test = """
-    """
-
-    detect_ai_generated_enhanced(code_to_test)
-
-    # print(extract_problem_statement("Hello Word"))                  # Works
-    # print(generate_code_from_problem("Hello World"))                # Works
-    # print(rewrite_code("Hello"))                                    # Works  
 

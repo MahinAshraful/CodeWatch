@@ -42,6 +42,12 @@ def get_code_embedding(code: str) ->  np.ndarray:
         print(f"Error getting the embedding: {e}")
         return None
 
+def reshape_embedding(emb):
+    """Ensure embedding is shape (1, D) for cosine similarity."""
+    if isinstance(emb, np.ndarray) and emb.ndim == 1:
+        return emb.reshape(1, -1)
+    return emb  # assume already (1, D)
+
 def main():
     print(get_code_embedding("Hello, World!"))
 

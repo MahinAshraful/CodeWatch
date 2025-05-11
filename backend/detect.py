@@ -13,7 +13,6 @@ if __name__ == "__main__":
     """
 
     # Run enhanced detection
-    # detect_ai_generated_enhanced(code_to_test)
-    get_code_embedding("Hello word")
+    detect_ai_generated_enhanced(code_to_test)
 
     
