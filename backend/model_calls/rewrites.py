@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
-from typing import Any
+from typing import Any, Tuple
 import warnings
 
 from .embedding import get_code_embedding, reshape_embedding        # Getting embedding utilities
@@ -32,6 +32,42 @@ def load_prompt(template_path: str, code: str) -> str:
 
     # inject the code in {filler} spot in the template 
     return template.format(filler=code)
+
+def get_markdown_response_from_llm(content: str) -> Tuple[str, bool]:
+    """
+    The function takes in LLM response and extracts the markdown code from it.
+
+    Args:
+        content (str): The LLM generated response that's sent back from the API call.
+
+    Returns:
+        Tuple[str, bool]: The markdown section of the response containing the code and True if
+                          extraction is sucessful, else the whole unchanged response and False.
+    """
+
+    # Extract code block from response
+    if "```" in content:
+        parts = content.split("```")
+        if len(parts) >= 3:
+            generated_code = parts[1]
+            # Remove language identifier if present
+            if (
+                generated_code.split("\n", 1)[0].strip()
+                and not generated_code.split("\n", 1)[0]
+                .strip()
+                .startswith("import")
+                and not generated_code.split("\n", 1)[0]
+                .strip()
+                .startswith("def")
+            ):
+                generated_code = (
+                    generated_code.split("\n", 1)[1]
+                    if len(generated_code.split("\n", 1)) > 1
+                    else generated_code
+                )
+            return (generated_code.strip(), True)
+        
+    return (content, False)
 
 # ======================================= API Call Related Functions =======================================
 
@@ -71,31 +107,15 @@ async def rewrite_code_async(code: str, index: int = 0, retry_attempts: int = 1,
             )
 
             content = response.choices[0].message.content
+            markdown, sucessful =  get_markdown_response_from_llm(content)
 
-            # Extract code block from response
-            if "```" in content:
-                parts = content.split("```")
-                if len(parts) >= 3:
-                    rewritten_code = parts[1]
-                    # Remove language identifier if present
-                    if (
-                        rewritten_code.split("\n", 1)[0].strip()
-                        and not rewritten_code.split("\n", 1)[0]
-                        .strip()
-                        .startswith("import")
-                        and not rewritten_code.split("\n", 1)[0]
-                        .strip()
-                        .startswith("def")
-                    ):
-                        rewritten_code = (
-                            rewritten_code.split("\n", 1)[1]
-                            if len(rewritten_code.split("\n", 1)) > 1
-                            else rewritten_code
-                        )
-                    print(f"Rewrite {index+1} complete")
-                    return rewritten_code.strip()
+            if sucessful:
+                print(f"Rewrite {index+1} complete")
+                return markdown
+            
+            # Unsucessful extraction
             print(f"Rewrite {index+1} failed to parse markdown")
-            return content
+            return markdown
         
         except openai.RateLimitError as e:
             if attempt < retry_attempts - 1:
@@ -183,29 +203,7 @@ def generate_code_from_problem(problem_statement, retry_attempts=1, retry_delay=
             )
 
             content = response.choices[0].message.content
-
-            # Extract code block from response
-            if "```" in content:
-                parts = content.split("```")
-                if len(parts) >= 3:
-                    generated_code = parts[1]
-                    # Remove language identifier if present
-                    if (
-                        generated_code.split("\n", 1)[0].strip()
-                        and not generated_code.split("\n", 1)[0]
-                        .strip()
-                        .startswith("import")
-                        and not generated_code.split("\n", 1)[0]
-                        .strip()
-                        .startswith("def")
-                    ):
-                        generated_code = (
-                            generated_code.split("\n", 1)[1]
-                            if len(generated_code.split("\n", 1)) > 1
-                            else generated_code
-                        )
-                    return generated_code.strip()
-            return content
+            return get_markdown_response_from_llm(content)[0]   # Extract only the response, no need the bool
 
         except openai.RateLimitError as e:
             if attempt < retry_attempts - 1:
@@ -336,5 +334,3 @@ def detect_ai_generated_enhanced(code: str, num_rewrites: int = 1, min_rewrites:
 # def detect_ai_generated(code, num_rewrites=1, min_rewrites=1):
 #     """Synchronous wrapper for detect_ai_generated_async"""
 #     return asyncio.run(detect_ai_generated_async(code, num_rewrites, min_rewrites))
-
-
